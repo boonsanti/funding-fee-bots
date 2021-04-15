@@ -1,0 +1,23 @@
+{
+  "name": "crypbo",
+  "version": "1.0.0",
+  "description": "Auto Re-balancing Robot",
+  "private": true,
+  "main": "index.js",
+  "scripts": {
+    "serve": "nodemon ./index.js --watch"
+  },
+  "keywords": [],
+  "author": "Game",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^0.19.0",
+    "bitmex-realtime-api": "^0.4.0",
+    "console-table-printer": "^2.8.2",
+    "js-sha256": "^0.9.0",
+    "moment": "^2.29.1",
+    "node-binance-api": "^0.10.4",
+    "nodemon": "^1.18.11",
+    "request": "^2.88.0"
+  }
+}
