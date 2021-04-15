@@ -9,15 +9,16 @@ module.exports = {
   histo: "1d",
   primary: "BNB",
   secondary: "BUSD",
-  pair: "BNBBUSD",
+  futurePair: "BNBUSDT",
+  leverage: 1,
   // Amount of history (MAX. 500)
   // Ex.1 1440 mininutes of histominute
   // Ex.2 365 days of histoday
   limit: Math.floor(500),
   // Capital in USDT
   capital: 10 * 2,
-  // Order size in USDT
-  order_size: 100,
+  // Order size in Primary
+  order_size: 0.1,
   //Gap multiply of order size
   gap_multiply: 0.01,
   // Exchange Fees in percent(%)

@@ -2,21 +2,14 @@ const {
   primary,
   secondary,
   order_size,
-  ex_fee,
-  gap_multiply,
+  leverage,
+  futurePair,
 } = require("../config");
 
-const {
-  TELEGRAM_TOKEN,
-  LINE_NOTI,
-  BINANCE_KEY,
-  BINANCE_SECRET,
-} = require("../apikey");
+const { BINANCE_KEY, BINANCE_SECRET } = require("../apikey");
 
 const moment = require("moment");
 
-const { sendMessage } = require("./Telegram");
-const { notify } = require("./Line");
 const { printTable } = require("console-table-printer");
 
 module.exports = {
@@ -35,15 +28,7 @@ module.exports = {
       });
 
       binance.websockets.trades([pair], (trades) => {
-        let {
-          e: eventType,
-          E: eventTime,
-          s: symbol,
-          p: price,
-          q: quantity,
-          m: maker,
-          a: tradeId,
-        } = trades;
+        let { E: eventTime, p: price } = trades;
         q["price"] = price;
         q["eventTime"] = moment(eventTime).format("YYYY-MM-DD, HH:mm:ss");
       });
@@ -55,22 +40,19 @@ module.exports = {
           var futuresPositionRisk = await binance.futuresPositionRisk();
 
           var statusBot = false;
-          var futureStopLeverage = 2;
+          var futureStopLeverage = 1 + 1 / leverage;
 
           //Define Parameter
           q["secondary"] = balances[secondary].available / 1;
           q["primary"] = balances[primary].available / 1;
-          q["markPrice"] = futuresPositionRisk["BNBUSDT"].markPrice / 1;
+          q["markPrice"] = futuresPositionRisk[futurePair].markPrice / 1;
           q["liquidationPrice"] =
-            futuresPositionRisk["BNBUSDT"].liquidationPrice / 1;
+            futuresPositionRisk[futurePair].liquidationPrice / 1;
 
           //Bot Running Status
-          if (
+          statusBot =
             q["liquidationPrice"] > q["markPrice"] * futureStopLeverage &&
-            q["secondary"] / q["markPrice"] > 0.1
-          ) {
-            statusBot = true;
-          }
+            q["secondary"] / q["markPrice"] > 0.1;
 
           //Create a table
           const testCases = [
@@ -85,27 +67,27 @@ module.exports = {
               Symbol: secondary,
               Amount: q["secondary"].toFixed(2),
               Status: `Entry Price: ${(
-                futuresPositionRisk["BNBUSDT"].entryPrice / 1
+                futuresPositionRisk[futurePair].entryPrice / 1
               ).toFixed(2)}`,
-              Stop: `Stop Price: >${(
+              Stop: `Stop Price: <${(
                 q["markPrice"] * futureStopLeverage
               ).toFixed(2)}`,
               BotRunning: q["eventTime"],
             },
             {
               Symbol: "Future Size",
-              Amount: futuresPositionRisk["BNBUSDT"].positionAmt,
+              Amount: futuresPositionRisk[futurePair].positionAmt,
               Stop: `Liq. Price: ${(q["liquidationPrice"] / 1).toFixed(2)}`,
               Status: `PNL(ROE%): ${(
-                futuresPositionRisk["BNBUSDT"].unRealizedProfit / 1
+                futuresPositionRisk[futurePair].unRealizedProfit / 1
               ).toFixed(2)}`,
             },
           ];
 
           // Trading
           if (statusBot) {
-            await binance.marketBuy("BNBBUSD", 0.1);
-            await binance.futuresMarketSell("BNBUSDT", 0.1);
+            await binance.marketBuy(pair, order_size);
+            await binance.futuresMarketSell(futurePair, order_size);
           }
 
           // Clear Screen Before Print
@@ -113,7 +95,7 @@ module.exports = {
           //print Table
           printTable(testCases);
         });
-      }, 2000);
+      }, 1000);
     } catch (error) {
       console.log(error);
       return;
